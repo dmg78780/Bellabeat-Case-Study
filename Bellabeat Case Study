@@ -1,0 +1,90 @@
+#What is the number of unique id's for each table?
+
+SELECT COUNT(DISTINCT id) AS unique_id
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity
+
+#How often is each id checking-in? Categorize them.
+
+SELECT id
+,COUNT(id) as total_id
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity
+GROUP BY id
+ORDER BY total_id ASC
+
+SELECT id
+,COUNT(id) as total_id,
+CASE
+ WHEN COUNT(id) >= 50 THEN 'Very active user'
+ WHEN COUNT(id) >= 36 THEN 'Active user'
+ WHEN COUNT(id) >= 22 THEN 'Moderate user'
+ ELSE 'Inactive user'
+ END AS user_activity
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity
+GROUP BY id
+ORDER BY total_id;
+
+#What are the min, max and average of the total steps, total distance, very active minutes, fairly active minutes, lightly active minutes, sedentary minutes and calories?
+
+SELECT id
+,ROUND(MIN(totalsteps)) AS min_steps
+,ROUND(MAX(totalsteps)) AS max_steps
+,ROUND(AVG(totalsteps)) AS avg_steps
+,ROUND(MIN(totaldistance)) AS min_distance
+,ROUND(MAX(totaldistance)) AS max_distance
+,ROUND(AVG(totaldistance)) AS avg_distance
+,ROUND(MIN(veryactiveminutes)) AS min_veryactiveminutes
+,ROUND(MAX(veryactiveminutes)) AS max_veryactiveminutes
+,ROUND(AVG(veryactiveminutes)) AS avg_veryactiveminutes
+,ROUND(MIN(fairlyactiveminutes)) AS min_fairlyactiveminutes
+,ROUND(MAX(fairlyactiveminutes)) AS max_fairlyactiveminutes
+,ROUND(AVG(fairlyactiveminutes)) AS avg_fairlyactiveminutes
+,ROUND(MIN(lightlyactiveminutes)) AS min_lightlyactiveminutes
+,ROUND(MAX(lightlyactiveminutes)) AS max_lightlyactiveminutes
+,ROUND(AVG(lightlyactiveminutes)) AS lightlyactiveminutes
+,ROUND(MIN(sedentaryminutes)) AS min_sedentaryminutes
+,ROUND(MAX(sedentaryminutes)) AS max_sedentaryminutes
+,ROUND(AVG(sedentaryminutes)) AS avg_sedentaryminutes
+,ROUND(MIN(calories)) AS min_calories
+,ROUND(MAX(calories)) AS max_calories
+,ROUND(AVG(calories)) AS avg_calories
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity
+GROUP BY id
+ORDER BY id
+
+#How many people are reaching their recommended daily step goal and physical activity goal?
+#Referenced National Library of Medicine
+
+SELECT id
+,ROUND(AVG(veryactiveminutes) + AVG(fairlyactiveminutes) + AVG(lightlyactiveminutes)) AS sum_active_minutes
+,ROUND(AVG(totalsteps)) AS avg_total_steps,
+CASE
+ WHEN AVG(veryactiveminutes) + AVG(fairlyactiveminutes) + AVG(lightlyactiveminutes) >= 300 THEN 'Exceeds recommended physical activity'
+ WHEN AVG(veryactiveminutes) + AVG(fairlyactiveminutes) + AVG(lightlyactiveminutes) >= 150 THEN 'Meets recommended physical activity'
+ ELSE 'Below recommended physical activity'
+END AS Recommended_physical_activity,
+CASE
+ WHEN AVG(totalsteps) >= 12500 THEN 'highly_active'
+ WHEN AVG(totalsteps) >=10000 THEN 'active'
+ WHEN AVG(totalsteps) >=7500 THEN 'somewhat_active'
+ WHEN AVG(totalsteps) >= 5000 THEN 'low_active'
+ ELSE 'sedentary_lifestyle'
+END AS recommended_daily_steps
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity
+GROUP BY id
+ORDER By id;
+
+#Note, I used these articles for reference: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6536904/ https://pubmed.ncbi.nlm.nih.gov/14715035/
+
+#How are people sleeping in relation to how active they are?
+
+SELECT sleep.id
+,ROUND(AVG(sleep.totaltimeinbed)) AS avg_time_in_bed
+,ROUND(AVG(sleep.totalminutesasleep)) AS avg_min_asleep
+,ROUND(AVG(sleep.totaltimeinbed - sleep.totalminutesasleep)) AS avg_time_awake
+,ROUND(AVG(da.veryactiveminutes + da.fairlyactiveminutes + da.lightlyactiveminutes)) AS avg_active_minutes
+,ROUND(AVG(da.sedentaryminutes)) AS avg_sedentary_minutes
+FROM eco-notch-431817-a3.fitbit_fitness_tracker.sleep_day AS sleep
+INNER JOIN eco-notch-431817-a3.fitbit_fitness_tracker.daily_activity AS da
+ON da.id = sleep.id
+GROUP BY id
+
